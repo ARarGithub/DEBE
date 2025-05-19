@@ -82,22 +82,40 @@ void DataWriter::Run(MessageQueue<Container_t>* inputMQ) {
     return ;
 }
 
+
 /**
- * @brief write the container to the storage backend 
- * 
- * @param newContainer the input container 
+ * @brief Save the container data to a physical file on disk
+ *
+ * @param newContainer the container to be saved, containing ID and data
  */
 void DataWriter::SaveToFile(Container_t& newContainer) {
-    FILE* containerFile = NULL;
+    FILE* containerFile = NULL;  // File pointer for the container file
+
+    // Create filename from container ID (binary to string conversion)
     string fileName((char*)newContainer.containerID, CONTAINER_ID_LENGTH);
+
+    // Construct full path by combining:
+    // - container root path (prefix)
+    // - container ID (filename)
+    // - container suffix (file extension)
     string fileFullName = containerNamePrefix_ + fileName + containerNameTail_;
+
+    // Open file in binary write mode
     containerFile = fopen(fileFullName.c_str(), "wb");
     if (!containerFile) {
+        // Error handling if file cannot be opened
         tool::Logging(myName_.c_str(), "cannot open container file: %s\n", fileFullName.c_str());
         exit(EXIT_FAILURE);
     }
-    fwrite((char*)newContainer.body, newContainer.currentSize, 1,
-        containerFile);
+
+    // Write container data to file:
+    // - newContainer.body: pointer to data buffer
+    // - newContainer.currentSize: size of data to write
+    // - 1: number of elements to write
+    // - containerFile: destination file
+    fwrite((char*)newContainer.body, newContainer.currentSize, 1, containerFile);
+
+    // Close the file
     fclose(containerFile);
     return ;
 }
